@@ -1,36 +1,40 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { FaCheck, FaTimes, FaTrash, FaSignOutAlt, FaCalendar, FaClock, FaUser, FaPhone } from 'react-icons/fa'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FaCheck, FaTimes, FaTrash, FaSignOutAlt, FaCalendar, FaPhone, FaUser } from 'react-icons/fa'
 import api from '../api/axios'
 
-export default function Admin({ onLogout }) {
-  const [citas, setCitas] = useState([])
-  const [filtro, setFiltro] = useState('todas')
-  const [cargando, setCargando] = useState(true)
+const colorEstado = {
+  pendiente:  { bg: 'rgba(201,168,76,0.1)',  text: '#C9A84C',  border: 'rgba(201,168,76,0.3)'  },
+  confirmada: { bg: 'rgba(34,197,94,0.08)',  text: '#4ade80',  border: 'rgba(34,197,94,0.25)'  },
+  cancelada:  { bg: 'rgba(239,68,68,0.08)',  text: '#f87171',  border: 'rgba(239,68,68,0.25)'  },
+}
 
-  useEffect(() => {
-    cargarCitas()
-  }, [])
+export default function Admin({ onLogout }) {
+  const [citas, setCitas]     = useState([])
+  const [filtro, setFiltro]   = useState('todas')
+  const [cargando, setCargando] = useState(true)
+  const [citaDetalle, setCitaDetalle] = useState(null)
+
+  useEffect(() => { cargarCitas() }, [])
 
   async function cargarCitas() {
     try {
       const res = await api.get('/citas')
       setCitas(res.data)
-    } catch {
-      onLogout()
-    } finally {
-      setCargando(false)
-    }
+    } catch { onLogout() }
+    finally { setCargando(false) }
   }
 
   async function actualizarEstado(id, estado) {
     await api.put(`/citas/${id}/estado`, { estado })
+    setCitaDetalle(null)
     cargarCitas()
   }
 
   async function eliminarCita(id) {
     if (!confirm('¿Eliminar esta cita?')) return
     await api.delete(`/citas/${id}`)
+    setCitaDetalle(null)
     cargarCitas()
   }
 
@@ -41,146 +45,229 @@ export default function Admin({ onLogout }) {
 
   const citasFiltradas = citas.filter(c => filtro === 'todas' ? true : c.estado === filtro)
 
-  const stats = {
-    total: citas.length,
-    pendientes: citas.filter(c => c.estado === 'pendiente').length,
-    confirmadas: citas.filter(c => c.estado === 'confirmada').length,
-    canceladas: citas.filter(c => c.estado === 'cancelada').length,
-  }
-
-  const colorEstado = {
-    pendiente: 'bg-yellow-100 text-yellow-700',
-    confirmada: 'bg-green-100 text-green-700',
-    cancelada: 'bg-red-100 text-red-700',
-  }
+  const stats = [
+    { label: 'Total',       valor: citas.length,                                    color: '#C9A84C' },
+    { label: 'Pendientes',  valor: citas.filter(c => c.estado === 'pendiente').length,  color: '#C9A84C' },
+    { label: 'Confirmadas', valor: citas.filter(c => c.estado === 'confirmada').length, color: '#4ade80' },
+    { label: 'Canceladas',  valor: citas.filter(c => c.estado === 'cancelada').length,  color: '#f87171' },
+  ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ background: '#0a0a0a', color: '#F5F0E8', minHeight: '100vh' }}>
 
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+      {/* ── NAVBAR ── */}
+      <nav className="sticky top-0 z-40 px-8 py-5 flex justify-between items-center"
+        style={{ background: 'rgba(10,10,10,0.95)', borderBottom: '1px solid rgba(201,168,76,0.1)', backdropFilter: 'blur(12px)' }}>
         <div>
-          <p className="font-bold text-rose-400 tracking-widest">ILSE ALVARADO</p>
-          <p className="text-xs text-gray-400">Panel de Administración</p>
+          <p className="text-xs tracking-[0.4em] uppercase" style={{ color: '#C9A84C' }}>Ilse Alvarado</p>
+          <p className="text-base font-light tracking-[0.2em] uppercase" style={{ color: '#F5F0E8' }}>Panel de Administración</p>
         </div>
-        <button onClick={logout} className="flex items-center gap-2 text-gray-500 hover:text-rose-400 transition-colors text-sm">
+        <button onClick={logout}
+          className="flex items-center gap-2 text-xs tracking-widest uppercase transition-colors duration-300"
+          style={{ color: '#6B6350' }}
+          onMouseEnter={e => e.currentTarget.style.color = '#C9A84C'}
+          onMouseLeave={e => e.currentTarget.style.color = '#6B6350'}
+        >
           <FaSignOutAlt /> Cerrar sesión
         </button>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-8 py-12">
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Total', valor: stats.total, color: 'bg-rose-400' },
-            { label: 'Pendientes', valor: stats.pendientes, color: 'bg-yellow-400' },
-            { label: 'Confirmadas', valor: stats.confirmadas, color: 'bg-green-400' },
-            { label: 'Canceladas', valor: stats.canceladas, color: 'bg-red-400' },
-          ].map((stat, i) => (
-            <motion.div
-              key={i}
-              className="bg-white rounded-xl p-5 shadow-sm"
+        {/* ── STATS ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+          {stats.map((s, i) => (
+            <motion.div key={i}
+              className="p-6 border"
+              style={{ background: '#0d0d0d', borderColor: 'rgba(201,168,76,0.1)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: i * 0.08 }}
             >
-              <p className="text-gray-500 text-sm mb-1">{stat.label}</p>
-              <p className={`text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-pink-400`}>
-                {stat.valor}
-              </p>
+              <p className="text-xs tracking-widest uppercase mb-3" style={{ color: '#6B6350' }}>{s.label}</p>
+              <p className="text-5xl font-light" style={{ color: s.color }}>{s.valor}</p>
             </motion.div>
           ))}
         </div>
 
-        {/* Filtros */}
-        <div className="flex gap-3 mb-6 flex-wrap">
-          {['todas', 'pendiente', 'confirmada', 'cancelada'].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFiltro(f)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all capitalize ${
-                filtro === f ? 'bg-rose-400 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-rose-300'
-              }`}
+        {/* ── FILTROS ── */}
+        <div className="flex gap-3 mb-8 flex-wrap">
+          {['todas', 'pendiente', 'confirmada', 'cancelada'].map(f => (
+            <button key={f} onClick={() => setFiltro(f)}
+              className="px-5 py-2 text-xs tracking-widest uppercase transition-all duration-300"
+              style={{
+                background: filtro === f ? '#C9A84C' : 'transparent',
+                color: filtro === f ? '#0a0a0a' : '#6B6350',
+                border: `1px solid ${filtro === f ? '#C9A84C' : 'rgba(201,168,76,0.15)'}`,
+                fontWeight: filtro === f ? 600 : 400,
+              }}
             >
               {f}
             </button>
           ))}
+          <p className="ml-auto text-xs self-center" style={{ color: '#6B6350' }}>
+            {citasFiltradas.length} cita{citasFiltradas.length !== 1 ? 's' : ''}
+          </p>
         </div>
 
-        {/* Citas */}
+        {/* ── CITAS ── */}
         {cargando ? (
-          <p className="text-center text-gray-400 py-20">Cargando citas...</p>
+          <div className="text-center py-32">
+            <p className="text-xs tracking-widest uppercase" style={{ color: '#6B6350' }}>Cargando...</p>
+          </div>
         ) : citasFiltradas.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-4xl mb-3">📅</p>
-            <p className="text-gray-400">No hay citas {filtro !== 'todas' ? filtro + 's' : ''}</p>
+          <div className="text-center py-32 border" style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
+            <p className="text-3xl mb-4" style={{ color: '#C9A84C' }}>✦</p>
+            <p className="text-xs tracking-widest uppercase" style={{ color: '#6B6350' }}>Sin citas {filtro !== 'todas' ? filtro + 's' : ''}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {citasFiltradas.map((cita, i) => (
-              <motion.div
-                key={cita.id}
-                className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-bold text-gray-800">{cita.cliente_nombre}</h3>
-                    <p className="text-rose-400 font-medium text-sm">{cita.servicio_nombre}</p>
-                  </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${colorEstado[cita.estado]}`}>
-                    {cita.estado}
-                  </span>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-gray-500 text-sm">
-                    <FaCalendar className="text-rose-300" />
-                    <span>{cita.fecha} a las {cita.hora}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-500 text-sm">
-                    <FaPhone className="text-rose-300" />
-                    <span>{cita.cliente_telefono}</span>
-                  </div>
-                  {cita.notas && (
-                    <div className="flex items-center gap-2 text-gray-500 text-sm">
-                      <span>📝 {cita.notas}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  {cita.estado === 'pendiente' && (
-                    <>
-                      <button
-                        onClick={() => actualizarEstado(cita.id, 'confirmada')}
-                        className="flex-1 flex items-center justify-center gap-1 bg-green-500 text-white py-2 rounded-lg text-sm hover:bg-green-600 transition-all"
-                      >
-                        <FaCheck /> Confirmar
-                      </button>
-                      <button
-                        onClick={() => actualizarEstado(cita.id, 'cancelada')}
-                        className="flex-1 flex items-center justify-center gap-1 bg-red-400 text-white py-2 rounded-lg text-sm hover:bg-red-500 transition-all"
-                      >
-                        <FaTimes /> Cancelar
-                      </button>
-                    </>
-                  )}
-                  <button
-                    onClick={() => eliminarCita(cita.id)}
-                    className="flex items-center justify-center gap-1 border border-gray-200 text-gray-400 py-2 px-3 rounded-lg text-sm hover:border-red-300 hover:text-red-400 transition-all"
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <AnimatePresence>
+              {citasFiltradas.map((cita, i) => {
+                const est = colorEstado[cita.estado] || colorEstado.pendiente
+                return (
+                  <motion.div key={cita.id}
+                    className="p-6 border cursor-pointer group transition-all duration-300"
+                    style={{ background: '#0d0d0d', borderColor: 'rgba(201,168,76,0.1)' }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: i * 0.04 }}
+                    onClick={() => setCitaDetalle(cita)}
+                    whileHover={{ borderColor: 'rgba(201,168,76,0.35)' }}
                   >
-                    <FaTrash />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                    {/* Estado badge */}
+                    <div className="flex justify-between items-start mb-5">
+                      <span className="text-xs tracking-widest uppercase px-3 py-1"
+                        style={{ background: est.bg, color: est.text, border: `1px solid ${est.border}` }}>
+                        {cita.estado}
+                      </span>
+                      <p className="text-xs" style={{ color: '#6B6350' }}>#{cita.id}</p>
+                    </div>
+
+                    {/* Info cliente */}
+                    <h3 className="text-base font-light mb-1" style={{ color: '#F5F0E8' }}>{cita.cliente_nombre}</h3>
+                    <p className="text-sm mb-4" style={{ color: '#C9A84C' }}>{cita.servicio_nombre}</p>
+
+                    <div className="space-y-2 mb-5">
+                      <p className="text-xs flex items-center gap-2" style={{ color: '#6B6350' }}>
+                        <FaCalendar style={{ color: '#C9A84C' }} />
+                        {cita.fecha} · {cita.hora} hrs
+                      </p>
+                      <p className="text-xs flex items-center gap-2" style={{ color: '#6B6350' }}>
+                        <FaPhone style={{ color: '#C9A84C' }} />
+                        {cita.cliente_telefono}
+                      </p>
+                    </div>
+
+                    {/* Acciones rápidas */}
+                    {cita.estado === 'pendiente' && (
+                      <div className="flex gap-2" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => actualizarEstado(cita.id, 'confirmada')}
+                          className="flex-1 py-2 text-xs tracking-widest uppercase transition-all duration-300"
+                          style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(34,197,94,0.2)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(34,197,94,0.1)'}
+                        >
+                          <FaCheck className="inline mr-1" /> Confirmar
+                        </button>
+                        <button onClick={() => actualizarEstado(cita.id, 'cancelada')}
+                          className="flex-1 py-2 text-xs tracking-widest uppercase transition-all duration-300"
+                          style={{ background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.18)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                        >
+                          <FaTimes className="inline mr-1" /> Cancelar
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
           </div>
         )}
       </div>
+
+      {/* ── MODAL DETALLE ── */}
+      <AnimatePresence>
+        {citaDetalle && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setCitaDetalle(null)}
+          >
+            <motion.div
+              className="w-full max-w-lg p-8 border"
+              style={{ background: '#0d0d0d', borderColor: 'rgba(201,168,76,0.2)' }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <p className="text-xs tracking-widest uppercase mb-1" style={{ color: '#C9A84C' }}>Detalle de cita #{citaDetalle.id}</p>
+                  <h3 className="text-2xl font-light" style={{ color: '#F5F0E8' }}>{citaDetalle.cliente_nombre}</h3>
+                </div>
+                <button onClick={() => setCitaDetalle(null)} style={{ color: '#6B6350', fontSize: 20 }}>✕</button>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                {[
+                  { label: 'Servicio',   valor: citaDetalle.servicio_nombre },
+                  { label: 'Fecha',      valor: `${citaDetalle.fecha} a las ${citaDetalle.hora} hrs` },
+                  { label: 'Teléfono',   valor: citaDetalle.cliente_telefono },
+                  { label: 'Email',      valor: citaDetalle.cliente_email || '—' },
+                  { label: 'Estado',     valor: citaDetalle.estado },
+                  { label: 'Notas',      valor: citaDetalle.notas || '—' },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4 pb-4 border-b" style={{ borderColor: 'rgba(201,168,76,0.08)' }}>
+                    <p className="text-xs tracking-widest uppercase w-24 flex-shrink-0 mt-0.5" style={{ color: '#6B6350' }}>{item.label}</p>
+                    <p className="text-sm" style={{ color: '#F5F0E8' }}>{item.valor}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3 flex-wrap">
+                {citaDetalle.estado === 'pendiente' && (
+                  <>
+                    <button onClick={() => actualizarEstado(citaDetalle.id, 'confirmada')}
+                      className="flex-1 py-3 text-xs tracking-widest uppercase transition-all duration-300"
+                      style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+                      <FaCheck className="inline mr-2" /> Confirmar
+                    </button>
+                    <button onClick={() => actualizarEstado(citaDetalle.id, 'cancelada')}
+                      className="flex-1 py-3 text-xs tracking-widest uppercase transition-all duration-300"
+                      style={{ background: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>
+                      <FaTimes className="inline mr-2" /> Cancelar
+                    </button>
+                  </>
+                )}
+                {citaDetalle.estado === 'cancelada' && (
+                  <button onClick={() => actualizarEstado(citaDetalle.id, 'confirmada')}
+                    className="flex-1 py-3 text-xs tracking-widest uppercase"
+                    style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+                    <FaCheck className="inline mr-2" /> Reactivar
+                  </button>
+                )}
+                <button onClick={() => eliminarCita(citaDetalle.id)}
+                  className="py-3 px-4 text-xs tracking-widest uppercase transition-all duration-300"
+                  style={{ color: '#6B6350', border: '1px solid rgba(201,168,76,0.1)' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.2)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#6B6350'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.1)' }}
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   )
 }
