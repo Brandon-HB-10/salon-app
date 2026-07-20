@@ -68,6 +68,7 @@ function Ticker() {
 // ── Componente principal ─────────────────────────────────
 export default function Home() {
   const [servicios, setServicios] = useState([])
+  const [menuAbierto, setMenuAbierto] = useState(false)
   const [form, setForm] = useState({
     cliente_nombre: '', cliente_telefono: '', cliente_email: '',
     servicio_id: '', servicio_nombre: '', fecha: '', hora: '', notas: '',
@@ -120,34 +121,67 @@ export default function Home() {
   return (
     <div style={{ background: '#0a0a0a', color: '#f5f0e8' }} className="font-sans">
 
-      {/* ── NAVBAR ── */}
-      <nav className="fixed top-0 w-full z-50 px-8 py-5 flex justify-between items-center"
-        style={{ background: 'linear-gradient(to bottom, rgba(10,10,10,0.95), transparent)' }}>
-        <div>
-          <p className="text-xs tracking-[0.4em] uppercase" style={{ color: '#C9A84C' }}>Ilse Alvarado</p>
-          <p className="text-lg font-light tracking-[0.2em] uppercase" style={{ color: '#F5F0E8' }}>Studio</p>
-        </div>
-        <div className="flex gap-8 text-xs tracking-widest uppercase" style={{ color: '#6B6350' }}>
-          {['Servicios','Nosotros','Galería','Agendar'].map(item => (
-            <a key={item} href={`#${item.toLowerCase()}`}
-              className="hover:text-amber-400 transition-colors duration-300">
-              {item}
-            </a>
-          ))}
+
+        {/* NAVBAR */}
+        <nav className="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center"
+          style={{ background: 'rgba(10,10,10,0.95)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
+          
+          <div>
+            <p className="text-xs tracking-[0.4em] uppercase" style={{ color: '#C9A84C' }}>Ilse Alvarado</p>
+            <p className="text-sm font-light tracking-[0.2em] uppercase" style={{ color: '#F5F0E8' }}>Studio</p>
+          </div>
+
+          {/* Desktop menu */}
+          <div className="hidden md:flex gap-8 text-xs tracking-widest uppercase" style={{ color: '#6B6350' }}>
+            {['Servicios','Nosotros','Galería','Agendar'].map(item => (
+              <a key={item} href={`#${item.toLowerCase()}`}
+                className="hover:text-amber-400 transition-colors duration-300">
+                {item}
+              </a>
+            ))}
+            <button onClick={() => { window.history.pushState({}, '', '/admin'); window.dispatchEvent(new PopStateEvent('popstate')) }}
+              className="hover:text-amber-400 transition-colors duration-300"
+              style={{ color: '#6B6350' }}>
+              Admin
+            </button>
+          </div>
+
+          {/* Hamburger mobile */}
           <button
-            onClick={() => {
-              window.history.pushState({}, '', '/admin')
-              window.dispatchEvent(new PopStateEvent('popstate'))
-            }}
-            className="text-xs tracking-widest uppercase transition-colors duration-300"
-            style={{ color: '#6B6350' }}
-            onMouseEnter={e => e.currentTarget.style.color = '#C9A84C'}
-            onMouseLeave={e => e.currentTarget.style.color = '#6B6350'}
+            className="md:hidden flex flex-col gap-1.5 p-2"
+            onClick={() => setMenuAbierto(!menuAbierto)}
           >
-            Admin
+            <span className="block w-6 h-px transition-all duration-300"
+              style={{ background: menuAbierto ? '#C9A84C' : '#F5F0E8', transform: menuAbierto ? 'rotate(45deg) translate(4px, 4px)' : 'none' }} />
+            <span className="block w-6 h-px transition-all duration-300"
+              style={{ background: '#C9A84C', opacity: menuAbierto ? 0 : 1 }} />
+            <span className="block w-6 h-px transition-all duration-300"
+              style={{ background: menuAbierto ? '#C9A84C' : '#F5F0E8', transform: menuAbierto ? 'rotate(-45deg) translate(4px, -4px)' : 'none' }} />
           </button>
-        </div>
-      </nav>
+
+          {/* Mobile menu desplegable */}
+          {menuAbierto && (
+            <motion.div
+              className="absolute top-full left-0 w-full py-6 px-6 flex flex-col gap-5 md:hidden"
+              style={{ background: 'rgba(10,10,10,0.98)', borderBottom: '1px solid rgba(201,168,76,0.15)' }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {['Servicios','Nosotros','Galería','Agendar'].map(item => (
+                <a key={item} href={`#${item.toLowerCase()}`}
+                  onClick={() => setMenuAbierto(false)}
+                  className="text-sm tracking-widest uppercase transition-colors duration-300"
+                  style={{ color: '#6B6350' }}
+                  onMouseEnter={e => e.target.style.color = '#C9A84C'}
+                  onMouseLeave={e => e.target.style.color = '#6B6350'}
+                >
+                  {item}
+                </a>
+              ))}
+            </motion.div>
+          )}
+        </nav>
 
       {/* ── HERO ── */}
       <section ref={heroRef} className="relative h-screen overflow-hidden flex items-end pb-20 px-8">
@@ -217,7 +251,7 @@ export default function Home() {
 
         {/* Info flotante derecha */}
         <motion.div
-          className="absolute right-8 bottom-20 text-right text-xs space-y-2"
+          className="hidden md:block absolute right-8 bottom-20 text-right text-xs space-y-2"
           style={{ color: '#6B6350' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
