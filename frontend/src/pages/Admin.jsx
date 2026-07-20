@@ -106,7 +106,7 @@ export default function Admin({ onLogout }) {
             </button>
           ))}
           <p className="ml-auto text-xs self-center" style={{ color: '#6B6350' }}>
-            {citasFiltradas.length} cita{citasFiltradas.length !== 1 ? 's' : ''}
+            {`${citasFiltradas.length} ${citasFiltradas.length !== 1 ? 'citas' : 'cita'}`}
           </p>
         </div>
 
@@ -122,7 +122,7 @@ export default function Admin({ onLogout }) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            <AnimatePresence>
+            
               {citasFiltradas.map((cita, i) => {
                 const est = colorEstado[cita.estado] || colorEstado.pendiente
                 return (
@@ -184,7 +184,7 @@ export default function Admin({ onLogout }) {
                   </motion.div>
                 )
               })}
-            </AnimatePresence>
+            
           </div>
         )}
       </div>
