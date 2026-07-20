@@ -179,6 +179,17 @@ export default function Home() {
                   {item}
                 </a>
               ))}
+              <button
+  onClick={() => {
+    setMenuAbierto(false)
+    window.history.pushState({}, '', '/admin')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }}
+  className="text-sm tracking-widest uppercase text-left"
+  style={{ color: '#6B6350' }}
+>
+  Admin
+</button>
             </motion.div>
           )}
         </nav>
