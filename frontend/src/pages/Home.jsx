@@ -372,6 +372,11 @@ export default function Home() {
               className="flex gap-4"
               animate={{ x: ['0%', '-50%'] }}
               transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+
+              drag="x"
+              dragConstraints={{ left: -1600, right: 0 }}
+              dragElastic={0.08}
+              whileTap={{ cursor: "grabbing" }}
             >
               {[...galeria, ...galeria].map((img, i) => (
                 <motion.div
